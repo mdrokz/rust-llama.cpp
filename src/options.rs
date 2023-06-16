@@ -49,7 +49,7 @@ struct PredictOptions {
     typical_p: f64,
     frequency_penalty: f64,
     presence_penalty: f64,
-    mirostat: i32,
+    mirostat: i64,
     mirostat_eta: f64,
     mirostat_tau: f64,
     penalize_nl: bool,
@@ -112,16 +112,16 @@ impl ModelOptions {
         self.seed = seed;
     }
 
-    fn enable_f16_memory(&mut self, f16_memory: bool) {
-        self.f16_memory = f16_memory;
+    fn enable_f16_memory(&mut self) {
+        self.f16_memory = true;
     }
 
-    fn enable_embeddings(&mut self, embeddings: bool) {
-        self.embeddings = embeddings;
+    fn enable_embeddings(&mut self) {
+        self.embeddings = true;
     }
-    
-    fn enable_m_lock(&mut self, m_lock: bool) {
-        self.m_lock = m_lock;
+
+    fn enable_m_lock(&mut self) {
+        self.m_lock = true;
     }
 
     fn set_m_map(&mut self, m_map: bool) {
@@ -143,10 +143,7 @@ impl ModelOptions {
     fn set_main_gpu(&mut self, main_gpu: String) {
         self.main_gpu = main_gpu;
     }
-    
 }
-
-
 
 impl PredictOptions {
     fn set_prediction_tensor_split(&mut self, tensor_split: String) {
@@ -156,7 +153,6 @@ impl PredictOptions {
     fn set_prediction_main_gpu(&mut self, main_gpu: String) {
         self.main_gpu = main_gpu;
     }
-
 
     fn enable_f16_kv(&mut self) {
         self.f16_kv = true;
@@ -182,4 +178,95 @@ impl PredictOptions {
         self.m_lock = m_lock;
     }
 
+    fn set_memory_map(&mut self, m_map: bool) {
+        self.m_map = m_map;
+    }
+
+    fn set_token_callback(&mut self, token_callback: Box<dyn Fn(String) -> bool>) {
+        self.token_callback = token_callback;
+    }
+
+    fn set_path_prompt_cache(&mut self, path_prompt_cache: String) {
+        self.path_prompt_cache = path_prompt_cache;
+    }
+
+    fn set_seed(&mut self, seed: i64) {
+        self.seed = seed;
+    }
+
+    fn set_threads(&mut self, threads: i64) {
+        self.threads = threads;
+    }
+
+    fn set_tokens(&mut self, tokens: i64) {
+        self.tokens = tokens;
+    }
+
+    fn set_top_k(&mut self, top_k: i64) {
+        self.top_k = top_k;
+    }
+
+    fn set_repeat(&mut self, repeat: i64) {
+        self.repeat = repeat;
+    }
+
+    fn set_batch(&mut self, batch: i64) {
+        self.batch = batch;
+    }
+
+    fn set_n_keep(&mut self, n_keep: i64) {
+        self.n_keep = n_keep;
+    }
+
+    fn set_top_p(&mut self, top_p: f64) {
+        self.top_p = top_p;
+    }
+
+    fn set_temperature(&mut self, temperature: f64) {
+        self.temperature = temperature;
+    }
+
+    fn set_penalty(&mut self, penalty: f64) {
+        self.penalty = penalty;
+    }
+
+    fn set_tail_free_sampling_z(&mut self, tail_free_sampling_z: f64) {
+        self.tail_free_sampling_z = tail_free_sampling_z;
+    }
+
+    fn set_typical_p(&mut self, typical_p: f64) {
+        self.typical_p = typical_p;
+    }
+
+    fn set_frequency_penalty(&mut self, frequency_penalty: f64) {
+        self.frequency_penalty = frequency_penalty;
+    }
+
+    fn set_presence_penalty(&mut self, presence_penalty: f64) {
+        self.presence_penalty = presence_penalty;
+    }
+
+    fn set_mirostat(&mut self, mirostat: i64) {
+        self.mirostat = mirostat;
+    }
+
+    fn set_mirostat_eta(&mut self, mirostat_eta: f64) {
+        self.mirostat_eta = mirostat_eta;
+    }
+
+    fn set_mirostat_tau(&mut self, mirostat_tau: f64) {
+        self.mirostat_tau = mirostat_tau;
+    }
+
+    fn enable_penalize_nl(&mut self) {
+        self.penalize_nl = true;
+    }
+
+    fn set_logit_bias(&mut self, logit_bias: String) {
+        self.logit_bias = logit_bias;
+    }
+
+    fn ignore_eos(&mut self) {
+        self.ignore_eos = true;
+    }
 }
