@@ -102,3 +102,84 @@ impl Default for PredictOptions {
         }
     }
 }
+
+impl ModelOptions {
+    fn set_context(&mut self, context_size: i64) {
+        self.context_size = context_size;
+    }
+
+    fn set_model_seed(&mut self, seed: i64) {
+        self.seed = seed;
+    }
+
+    fn enable_f16_memory(&mut self, f16_memory: bool) {
+        self.f16_memory = f16_memory;
+    }
+
+    fn enable_embeddings(&mut self, embeddings: bool) {
+        self.embeddings = embeddings;
+    }
+    
+    fn enable_m_lock(&mut self, m_lock: bool) {
+        self.m_lock = m_lock;
+    }
+
+    fn set_m_map(&mut self, m_map: bool) {
+        self.m_map = m_map;
+    }
+
+    fn set_n_batch(&mut self, n_batch: i64) {
+        self.n_batch = n_batch;
+    }
+
+    fn set_tensor_split(&mut self, tensor_split: String) {
+        self.tensor_split = tensor_split;
+    }
+
+    fn set_gpu_layers(&mut self, n_gpu_layers: i64) {
+        self.n_gpu_layers = n_gpu_layers;
+    }
+
+    fn set_main_gpu(&mut self, main_gpu: String) {
+        self.main_gpu = main_gpu;
+    }
+    
+}
+
+
+
+impl PredictOptions {
+    fn set_prediction_tensor_split(&mut self, tensor_split: String) {
+        self.tensor_split = tensor_split;
+    }
+
+    fn set_prediction_main_gpu(&mut self, main_gpu: String) {
+        self.main_gpu = main_gpu;
+    }
+
+
+    fn enable_f16_kv(&mut self) {
+        self.f16_kv = true;
+    }
+
+    fn enable_debug_mode(&mut self) {
+        self.debug_mode = true;
+    }
+
+    fn enable_prompt_cache_all(&mut self) {
+        self.prompt_cache_all = true;
+    }
+
+    fn enable_prompt_cache_ro(&mut self) {
+        self.prompt_cache_ro = true;
+    }
+
+    fn enable_m_lock(&mut self) {
+        self.m_lock = true;
+    }
+
+    fn set_m_lock(&mut self, m_lock: bool) {
+        self.m_lock = m_lock;
+    }
+
+}
