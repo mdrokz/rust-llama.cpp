@@ -14,11 +14,23 @@ fn main() {
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
 
+
+    cc::Build::new()
+    .include("./llama.cpp")
+    .file("./llama.cpp/ggml.c")
+    .shared_flag(false)
+    .cpp(false)
+    .compile("ggml");
+
+    let out_dir = env::var("OUT_DIR").unwrap();
+    let ggml_obj = PathBuf::from(out_dir).join("llama.cpp/ggml.o");
+
     cc::Build::new()
         .include("./llama.cpp/examples")
-        // .file("./llama.cpp/llama.cpp")
         .include("./llama.cpp")
-        // .file("./llama.cpp/examples/common.cpp")
+        .object(ggml_obj)
+        .file("./llama.cpp/llama.cpp")
+        .file("./binding.cpp")
         .cpp(true)
         .compile("binding");
 }
