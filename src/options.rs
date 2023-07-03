@@ -1,15 +1,18 @@
 #[derive(Debug, Clone)]
-struct ModelOptions {
-    context_size: i64,
-    seed: i64,
-    n_batch: i64,
-    f16_memory: bool,
-    m_lock: bool,
-    m_map: bool,
-    embeddings: bool,
-    n_gpu_layers: i64,
-    main_gpu: String,
-    tensor_split: String,
+pub struct ModelOptions {
+    pub context_size: i32,
+    pub seed: i32,
+    pub n_batch: i32,
+    pub f16_memory: bool,
+    pub m_lock: bool,
+    pub m_map: bool,
+    pub low_vram: bool,
+    pub vocab_only: bool,
+    pub embeddings: bool,
+    pub n_gpu_layers: i32,
+    pub main_gpu: String,
+    pub tensor_split: String,
+    pub numa: bool
 }
 
 impl Default for ModelOptions {
@@ -20,8 +23,11 @@ impl Default for ModelOptions {
             f16_memory: false,
             m_lock: false,
             embeddings: false,
+            low_vram: false,
+            vocab_only: false,
             m_map: true,
             n_batch: 0,
+            numa: false,
             n_gpu_layers: 0,
             main_gpu: String::from(""),
             tensor_split: String::from(""),
@@ -30,13 +36,13 @@ impl Default for ModelOptions {
 }
 
 struct PredictOptions {
-    seed: i64,
-    threads: i64,
-    tokens: i64,
-    top_k: i64,
-    repeat: i64,
-    batch: i64,
-    n_keep: i64,
+    seed: i32,
+    threads: i32,
+    tokens: i32,
+    top_k: i32,
+    repeat: i32,
+    batch: i32,
+    n_keep: i32,
     top_p: f64,
     temperature: f64,
     penalty: f64,
@@ -49,7 +55,7 @@ struct PredictOptions {
     typical_p: f64,
     frequency_penalty: f64,
     presence_penalty: f64,
-    mirostat: i64,
+    mirostat: i32,
     mirostat_eta: f64,
     mirostat_tau: f64,
     penalize_nl: bool,
@@ -104,11 +110,11 @@ impl Default for PredictOptions {
 }
 
 impl ModelOptions {
-    fn set_context(&mut self, context_size: i64) {
+    fn set_context(&mut self, context_size: i32) {
         self.context_size = context_size;
     }
 
-    fn set_model_seed(&mut self, seed: i64) {
+    fn set_model_seed(&mut self, seed: i32) {
         self.seed = seed;
     }
 
@@ -128,7 +134,7 @@ impl ModelOptions {
         self.m_map = m_map;
     }
 
-    fn set_n_batch(&mut self, n_batch: i64) {
+    fn set_n_batch(&mut self, n_batch: i32) {
         self.n_batch = n_batch;
     }
 
@@ -136,7 +142,7 @@ impl ModelOptions {
         self.tensor_split = tensor_split;
     }
 
-    fn set_gpu_layers(&mut self, n_gpu_layers: i64) {
+    fn set_gpu_layers(&mut self, n_gpu_layers: i32) {
         self.n_gpu_layers = n_gpu_layers;
     }
 
@@ -190,31 +196,31 @@ impl PredictOptions {
         self.path_prompt_cache = path_prompt_cache;
     }
 
-    fn set_seed(&mut self, seed: i64) {
+    fn set_seed(&mut self, seed: i32) {
         self.seed = seed;
     }
 
-    fn set_threads(&mut self, threads: i64) {
+    fn set_threads(&mut self, threads: i32) {
         self.threads = threads;
     }
 
-    fn set_tokens(&mut self, tokens: i64) {
+    fn set_tokens(&mut self, tokens: i32) {
         self.tokens = tokens;
     }
 
-    fn set_top_k(&mut self, top_k: i64) {
+    fn set_top_k(&mut self, top_k: i32) {
         self.top_k = top_k;
     }
 
-    fn set_repeat(&mut self, repeat: i64) {
+    fn set_repeat(&mut self, repeat: i32) {
         self.repeat = repeat;
     }
 
-    fn set_batch(&mut self, batch: i64) {
+    fn set_batch(&mut self, batch: i32) {
         self.batch = batch;
     }
 
-    fn set_n_keep(&mut self, n_keep: i64) {
+    fn set_n_keep(&mut self, n_keep: i32) {
         self.n_keep = n_keep;
     }
 
@@ -246,7 +252,7 @@ impl PredictOptions {
         self.presence_penalty = presence_penalty;
     }
 
-    fn set_mirostat(&mut self, mirostat: i64) {
+    fn set_mirostat(&mut self, mirostat: i32) {
         self.mirostat = mirostat;
     }
 
