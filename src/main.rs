@@ -1,6 +1,7 @@
 use std::{
     error::Error,
     ffi::{c_char, c_void, CStr, CString},
+    mem::size_of,
 };
 
 use options::{ModelOptions, PredictOptions};
@@ -91,6 +92,286 @@ impl LLama {
         std::fs::metadata(dst).map_err(|_| "Failed to save state".to_string())?;
 
         Ok(())
+    }
+
+    pub fn eval(&self, text: String, mut opts: PredictOptions) -> Result<(), Box<dyn Error>> {
+        let c_str = CString::new(text.clone()).unwrap();
+
+        let input = c_str.as_ptr();
+
+        let input2 = c_str.into_raw();
+
+        if opts.tokens == 0 {
+            opts.tokens = 99999999;
+        }
+
+        let reverse_count = opts.stop_prompts.len();
+
+        let mut c_strings: Vec<CString> = Vec::new();
+
+        let mut reverse_prompt = Vec::with_capacity(reverse_count);
+
+        let mut pass: *mut *const c_char = std::ptr::null_mut();
+
+        for prompt in &opts.stop_prompts {
+            let c_string = CString::new(prompt.clone()).unwrap();
+            reverse_prompt.push(c_string.as_ptr());
+            c_strings.push(c_string);
+        }
+
+        if !reverse_prompt.is_empty() {
+            pass = reverse_prompt.as_mut_ptr();
+        }
+
+        let logit_bias_cstr = CString::new(opts.logit_bias.clone()).unwrap();
+
+        let logit_bias = logit_bias_cstr.as_ptr();
+
+        let path_prompt_cache_cstr = CString::new(opts.path_prompt_cache.clone()).unwrap();
+
+        let path_prompt_cache = path_prompt_cache_cstr.as_ptr();
+
+        let main_gpu_cstr = CString::new(opts.main_gpu.clone()).unwrap();
+
+        let main_gpu = main_gpu_cstr.as_ptr();
+
+        let tensor_split_cstr = CString::new(opts.tensor_split.clone()).unwrap();
+
+        let tensor_split = tensor_split_cstr.as_ptr();
+
+        unsafe {
+            let params = llama_allocate_params(
+                input,
+                opts.seed,
+                opts.threads,
+                opts.tokens,
+                opts.top_k,
+                opts.top_p,
+                opts.temperature,
+                opts.penalty,
+                opts.repeat,
+                opts.ignore_eos,
+                opts.f16_kv,
+                opts.batch,
+                opts.n_keep,
+                pass,
+                reverse_count as i32,
+                opts.tail_free_sampling_z,
+                opts.typical_p,
+                opts.frequency_penalty,
+                opts.presence_penalty,
+                opts.mirostat,
+                opts.mirostat_eta,
+                opts.mirostat_tau,
+                opts.penalize_nl,
+                logit_bias,
+                path_prompt_cache,
+                opts.prompt_cache_all,
+                opts.m_lock,
+                opts.m_map,
+                main_gpu,
+                tensor_split,
+                opts.prompt_cache_ro,
+            );
+
+            let ret = eval(params, self.state, input2);
+
+            if ret != 0 {
+                return Err("Failed to predict".into());
+            }
+
+            llama_free_params(params);
+        }
+
+        Ok(())
+    }
+
+    pub fn token_embeddings(
+        &self,
+        tokens: Vec<i32>,
+        mut opts: PredictOptions,
+    ) -> Result<Vec<f32>, Box<dyn Error>> {
+        if !self.embeddings {
+            return Err("model loaded without embeddings".into());
+        }
+
+        if opts.tokens == 0 {
+            opts.tokens = 99999999;
+        }
+
+        let mut out = Vec::with_capacity(opts.tokens as usize);
+
+        let mut my_array: Vec<i32> = Vec::with_capacity(opts.tokens as usize * size_of::<i32>());
+
+        for (i, &v) in tokens.iter().enumerate() {
+            my_array[i] = v;
+        }
+
+        let logit_bias_cstr = CString::new(opts.logit_bias.clone()).unwrap();
+
+        let logit_bias = logit_bias_cstr.as_ptr();
+
+        let path_prompt_cache_cstr = CString::new(opts.path_prompt_cache.clone()).unwrap();
+
+        let path_prompt_cache = path_prompt_cache_cstr.as_ptr();
+
+        let main_gpu_cstr = CString::new(opts.main_gpu.clone()).unwrap();
+
+        let main_gpu = main_gpu_cstr.as_ptr();
+
+        let tensor_split_cstr = CString::new(opts.tensor_split.clone()).unwrap();
+
+        let tensor_split = tensor_split_cstr.as_ptr();
+
+        let input = CString::new("").unwrap();
+
+        unsafe {
+            let params = llama_allocate_params(
+                input.as_ptr(),
+                opts.seed,
+                opts.threads,
+                opts.tokens,
+                opts.top_k,
+                opts.top_p,
+                opts.temperature,
+                opts.penalty,
+                opts.repeat,
+                opts.ignore_eos,
+                opts.f16_kv,
+                opts.batch,
+                opts.n_keep,
+                std::ptr::null_mut(),
+                0,
+                opts.tail_free_sampling_z,
+                opts.typical_p,
+                opts.frequency_penalty,
+                opts.presence_penalty,
+                opts.mirostat,
+                opts.mirostat_eta,
+                opts.mirostat_tau,
+                opts.penalize_nl,
+                logit_bias,
+                path_prompt_cache,
+                opts.prompt_cache_all,
+                opts.m_lock,
+                opts.m_map,
+                main_gpu,
+                tensor_split,
+                opts.prompt_cache_ro,
+            );
+
+            let ret = get_token_embeddings(
+                params,
+                self.state,
+                my_array.as_mut_ptr(),
+                my_array.len() as i32,
+                out.as_mut_ptr(),
+            );
+
+            if ret != 0 {
+                return Err("Embedding inference failed".into());
+            }
+
+            Ok(out)
+        }
+    }
+
+    pub fn embeddings(
+        &self,
+        text: String,
+        mut opts: PredictOptions,
+    ) -> Result<Vec<f32>, Box<dyn Error>> {
+        if !self.embeddings {
+            return Err("model loaded without embeddings".into());
+        }
+
+        let c_str = CString::new(text.clone()).unwrap();
+
+        let input = c_str.as_ptr();
+
+        if opts.tokens == 0 {
+            opts.tokens = 99999999;
+        }
+
+        let reverse_count = opts.stop_prompts.len();
+
+        let mut c_strings: Vec<CString> = Vec::new();
+
+        let mut reverse_prompt = Vec::with_capacity(reverse_count);
+
+        let mut pass: *mut *const c_char = std::ptr::null_mut();
+
+        for prompt in &opts.stop_prompts {
+            let c_string = CString::new(prompt.clone()).unwrap();
+            reverse_prompt.push(c_string.as_ptr());
+            c_strings.push(c_string);
+        }
+
+        if !reverse_prompt.is_empty() {
+            pass = reverse_prompt.as_mut_ptr();
+        }
+
+        let mut out = Vec::with_capacity(opts.tokens as usize);
+
+        let logit_bias_cstr = CString::new(opts.logit_bias.clone()).unwrap();
+
+        let logit_bias = logit_bias_cstr.as_ptr();
+
+        let path_prompt_cache_cstr = CString::new(opts.path_prompt_cache.clone()).unwrap();
+
+        let path_prompt_cache = path_prompt_cache_cstr.as_ptr();
+
+        let main_gpu_cstr = CString::new(opts.main_gpu.clone()).unwrap();
+
+        let main_gpu = main_gpu_cstr.as_ptr();
+
+        let tensor_split_cstr = CString::new(opts.tensor_split.clone()).unwrap();
+
+        let tensor_split = tensor_split_cstr.as_ptr();
+
+        unsafe {
+            let params = llama_allocate_params(
+                input,
+                opts.seed,
+                opts.threads,
+                opts.tokens,
+                opts.top_k,
+                opts.top_p,
+                opts.temperature,
+                opts.penalty,
+                opts.repeat,
+                opts.ignore_eos,
+                opts.f16_kv,
+                opts.batch,
+                opts.n_keep,
+                pass,
+                reverse_count as i32,
+                opts.tail_free_sampling_z,
+                opts.typical_p,
+                opts.frequency_penalty,
+                opts.presence_penalty,
+                opts.mirostat,
+                opts.mirostat_eta,
+                opts.mirostat_tau,
+                opts.penalize_nl,
+                logit_bias,
+                path_prompt_cache,
+                opts.prompt_cache_all,
+                opts.m_lock,
+                opts.m_map,
+                main_gpu,
+                tensor_split,
+                opts.prompt_cache_ro,
+            );
+
+            let ret = get_embeddings(params, self.state, out.as_mut_ptr());
+
+            if ret != 0 {
+                return Err("Embedding inference failed".into());
+            }
+
+            Ok(out)
+        }
     }
 
     pub fn predict(
