@@ -15,21 +15,28 @@ fn main() {
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
 
-    let cx_flags = "-Wall -Wextra -Wpedantic -Wcast-qual -Wdouble-promotion -Wshadow -Wstrict-prototypes -Wpointer-arith -pthread -march=native -mtune=native".split(" ").into_iter();
-    let cxx_flags = "-Wall -Wdeprecated-declarations -Wunused-but-set-variable -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-multichar -pthread -march=native -mtune=native".split(" ").into_iter();
+    let mut cx_flags = String::from("-Wall -Wextra -Wpedantic -Wcast-qual -Wdouble-promotion -Wshadow -Wstrict-prototypes -Wpointer-arith -march=native -mtune=native");
+    let mut cxx_flags = String::from("-Wall -Wdeprecated-declarations -Wunused-but-set-variable -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-multichar -march=native -mtune=native");
+    
+    // check if os is linux
+    // if so, add -fPIC to cxx_flags
+    if cfg!(target_os = "linux") {
+        cx_flags.push_str(" -pthread");
+        cxx_flags.push_str(" -fPIC -pthread");
+    }
     
     let mut cbuild = &mut cc::Build::new();
-
+    
     let mut ccbuild = &mut cc::Build::new();
-
-    for cx_flag in cx_flags {
+    
+    for cx_flag in cx_flags.split(" ").into_iter() {
         cbuild = cbuild.flag(cx_flag);
     }
-
-    for cxx_flag in cxx_flags {
+    
+    for cxx_flag in cxx_flags.split(" ").into_iter() {
         ccbuild = ccbuild.flag(cxx_flag);
     }
-
+    
 
     cbuild
     .include("./llama.cpp")
@@ -43,6 +50,7 @@ fn main() {
     ccbuild
         .include("./llama.cpp/examples")
         .include("./llama.cpp")
+        .shared_flag(true)
         .object(ggml_obj)
         .file("./llama.cpp/examples/common.cpp")
         .file("./llama.cpp/llama.cpp")
