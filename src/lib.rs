@@ -503,36 +503,3 @@ pub extern "C" fn tokenCallback(state: *mut c_void, token: *const c_char) -> boo
 
     true
 }
-
-fn main() -> Result<(), Box<dyn Error>> {
-    let opts = ModelOptions::default();
-
-    // let llama = LLama::new(String::from("/home/mdrokz/Documents/Projects/docker/vicuna/models2/wizard-vicuna-13B.ggmlv3.q4_0.bin
-    // "), opts)?;
-    let llama = LLama::new(String::from("./wizard-vicuna-13B.ggmlv3.q4_0.bin"), &opts)?;
-
-    let mut predict_opts = PredictOptions {
-        ..Default::default()
-    };
-
-    // llama.load_state("./test.bin".into())?;
-
-    llama.predict(
-        "what are the national animals of india ?".into(),
-        &mut predict_opts,
-    )?;
-
-    llama.predict(
-        "What are the national birds of india ?".into(),
-        &mut predict_opts,
-    )?;
-    
-    llama.predict("Whats the first question i asked ?".into(), &mut predict_opts)?;
-
-
-    // llama.save_state("./test.bin".into())?;
-
-    println!("Hello, world!");
-
-    Ok(())
-}
