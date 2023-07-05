@@ -18,7 +18,7 @@ pub struct LLama {
 }
 
 impl LLama {
-    pub fn new(model: String, opts: ModelOptions) -> Result<Self, Box<dyn Error>> {
+    pub fn new(model: String, opts: &ModelOptions) -> Result<Self, Box<dyn Error>> {
         let model_path = CString::new(model).unwrap();
 
         let main_gpu_cstr = CString::new(opts.main_gpu.clone()).unwrap();
@@ -94,7 +94,7 @@ impl LLama {
         Ok(())
     }
 
-    pub fn eval(&self, text: String, mut opts: PredictOptions) -> Result<(), Box<dyn Error>> {
+    pub fn eval(&self, text: String, opts: &mut PredictOptions) -> Result<(), Box<dyn Error>> {
         let c_str = CString::new(text.clone()).unwrap();
 
         let input = c_str.as_ptr();
@@ -189,7 +189,7 @@ impl LLama {
     pub fn token_embeddings(
         &self,
         tokens: Vec<i32>,
-        mut opts: PredictOptions,
+        opts: &mut PredictOptions,
     ) -> Result<Vec<f32>, Box<dyn Error>> {
         if !self.embeddings {
             return Err("model loaded without embeddings".into());
@@ -279,7 +279,7 @@ impl LLama {
     pub fn embeddings(
         &self,
         text: String,
-        mut opts: PredictOptions,
+        opts: &mut PredictOptions,
     ) -> Result<Vec<f32>, Box<dyn Error>> {
         if !self.embeddings {
             return Err("model loaded without embeddings".into());
@@ -377,7 +377,7 @@ impl LLama {
     pub fn predict(
         &self,
         text: String,
-        mut opts: PredictOptions,
+        opts: &mut PredictOptions,
     ) -> Result<String, Box<dyn Error>> {
         let c_str = CString::new(text.clone()).unwrap();
 
@@ -509,14 +509,28 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // let llama = LLama::new(String::from("/home/mdrokz/Documents/Projects/docker/vicuna/models2/wizard-vicuna-13B.ggmlv3.q4_0.bin
     // "), opts)?;
-    let llama = LLama::new(String::from("./wizard-vicuna-13B.ggmlv3.q4_0.bin"), opts)?;
+    let llama = LLama::new(String::from("./wizard-vicuna-13B.ggmlv3.q4_0.bin"), &opts)?;
+
+    let mut predict_opts = PredictOptions {
+        ..Default::default()
+    };
+
+    // llama.load_state("./test.bin".into())?;
 
     llama.predict(
         "what are the national animals of india ?".into(),
-        PredictOptions {
-            ..Default::default()
-        },
+        &mut predict_opts,
     )?;
+
+    llama.predict(
+        "What are the national birds of india ?".into(),
+        &mut predict_opts,
+    )?;
+    
+    llama.predict("Whats the first question i asked ?".into(), &mut predict_opts)?;
+
+
+    // llama.save_state("./test.bin".into())?;
 
     println!("Hello, world!");
 
