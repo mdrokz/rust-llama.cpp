@@ -12,13 +12,13 @@ pub struct ModelOptions {
     pub n_gpu_layers: i32,
     pub main_gpu: String,
     pub tensor_split: String,
-    pub numa: bool
+    pub numa: bool,
 }
 
 impl Default for ModelOptions {
     fn default() -> Self {
         Self {
-            context_size: 128,
+            context_size: 2048,
             seed: 0,
             f16_memory: true,
             m_lock: false,
@@ -60,7 +60,8 @@ pub struct PredictOptions {
     pub mirostat_tau: f32,
     pub penalize_nl: bool,
     pub logit_bias: String,
-    pub token_callback: Box<dyn Fn(String) -> bool>,
+    // pub token_callback: Option<Box<dyn Fn(String) -> bool>>,
+    pub token_callback: Option<fn(String) -> bool>,
 
     pub path_prompt_cache: String,
     pub m_lock: bool,
@@ -97,7 +98,7 @@ impl Default for PredictOptions {
             mirostat_tau: 5.0,
             penalize_nl: false,
             logit_bias: String::from(""),
-            token_callback: Box::new(|_| true),
+            token_callback: None,
             path_prompt_cache: String::from(""),
             m_lock: false,
             m_map: false,
@@ -188,7 +189,10 @@ impl PredictOptions {
         self.m_map = m_map;
     }
 
-    pub fn set_token_callback(&mut self, token_callback: Box<dyn Fn(String) -> bool>) {
+    // pub fn set_token_callback(&mut self, token_callback: Option<Box<dyn Fn(String) -> bool>>) {
+    //     self.token_callback = token_callback;
+    // }
+    pub fn set_token_callback(&mut self, token_callback: Option<fn(String) -> bool>) {
         self.token_callback = token_callback;
     }
 
@@ -200,11 +204,11 @@ impl PredictOptions {
         self.seed = seed;
     }
 
-    pub  fn set_threads(&mut self, threads: i32) {
+    pub fn set_threads(&mut self, threads: i32) {
         self.threads = threads;
     }
 
-    pub  fn set_tokens(&mut self, tokens: i32) {
+    pub fn set_tokens(&mut self, tokens: i32) {
         self.tokens = tokens;
     }
 
