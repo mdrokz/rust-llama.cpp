@@ -104,6 +104,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "llama_cpp_rs"
+version = "0.1.0"
+dependencies = [
+ "bindgen",
+ "cc",
+ "lazy_static",
+]
+
+[[package]]
 name = "log"
 version = "0.4.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -185,14 +194,6 @@ name = "regex-syntax"
 version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "436b050e76ed2903236f032a59761c1eb99e1b0aead2c257922771dab1fc8c78"
-
-[[package]]
-name = "rust_llama_cpp"
-version = "0.1.0"
-dependencies = [
- "bindgen",
- "cc",
-]
 
 [[package]]
 name = "rustc-hash"
