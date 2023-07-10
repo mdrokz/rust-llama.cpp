@@ -1,14 +1,22 @@
 use std::{
+    collections::HashMap,
     error::Error,
     ffi::{c_char, c_void, CStr, CString},
     mem::size_of,
+    sync::{Mutex},
 };
 
 use options::{ModelOptions, PredictOptions};
 
-mod options;
+use lazy_static::lazy_static;
+
+pub mod options;
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+
+lazy_static! {
+    static ref CALLBACKS: Mutex<HashMap<usize, fn(String) -> bool>> = Mutex::new(HashMap::new());
+}
 
 #[derive(Debug, Clone)]
 pub struct LLama {
@@ -47,7 +55,6 @@ impl LLama {
                 opts.numa,
             );
 
-            println!("result: {:?}", result == std::ptr::null_mut());
             if result == std::ptr::null_mut() {
                 return Err("Failed to load model".into());
             } else {
@@ -374,6 +381,10 @@ impl LLama {
         }
     }
 
+    pub fn set_token_callback(&self, callback: Option<fn(String) -> bool>) {
+        set_callback(self.state, callback);
+    }
+
     pub fn predict(
         &self,
         text: String,
@@ -382,6 +393,10 @@ impl LLama {
         let c_str = CString::new(text.clone()).unwrap();
 
         let input = c_str.as_ptr();
+
+        if let Some(callback) = opts.token_callback {
+            set_callback(self.state, Some(callback));
+        }
 
         if opts.tokens == 0 {
             opts.tokens = 99999999;
@@ -467,7 +482,6 @@ impl LLama {
             llama_free_params(params);
 
             let c_str: &CStr = CStr::from_ptr(out.as_mut_ptr());
-            println!("c_str: {:?}", c_str);
             let mut res: String = c_str.to_str().unwrap().to_owned();
 
             res = res.trim_start().to_string();
@@ -477,8 +491,6 @@ impl LLama {
             for s in &opts.stop_prompts {
                 res = res.trim_end_matches(s).to_string();
             }
-
-            println!("res: {:?}", res);
 
             Ok(String::new())
         }
@@ -491,14 +503,26 @@ impl Drop for LLama {
     }
 }
 
+fn set_callback(state: *mut c_void, callback: Option<fn(String) -> bool>) {
+    let mut callbacks = CALLBACKS.lock().unwrap();
+
+    if let Some(callback) = callback {
+        callbacks.insert(state as usize, callback);
+    } else {
+        callbacks.remove(&(state as usize));
+    }
+}
+
 #[no_mangle]
-pub extern "C" fn tokenCallback(state: *mut c_void, token: *const c_char) -> bool {
-    // Your code here...
-    unsafe {
-        println!(
-            "token: {:?}",
-            std::ffi::CStr::from_ptr(token).to_str().unwrap()
-        );
+extern "C" fn tokenCallback(state: *mut c_void, token: *const c_char) -> bool {
+    let mut callbacks = CALLBACKS.lock().unwrap();
+
+    if let Some(callback) = callbacks.get_mut(&(state as usize)) {
+        let c_str: &CStr = unsafe { CStr::from_ptr(token) };
+        let str_slice: &str = c_str.to_str().unwrap();
+        let string: String = str_slice.to_owned();
+
+        return callback(string);
     }
 
     true
