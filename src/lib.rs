@@ -492,7 +492,7 @@ impl LLama {
                 res = res.trim_end_matches(s).to_string();
             }
 
-            Ok(String::new())
+            Ok(res)
         }
     }
 }
