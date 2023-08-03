@@ -60,9 +60,8 @@ pub struct PredictOptions {
     pub mirostat_tau: f32,
     pub penalize_nl: bool,
     pub logit_bias: String,
-    // pub token_callback: Option<Box<dyn Fn(String) -> bool>>,
-    pub token_callback: Option<fn(String) -> bool>,
-
+    pub token_callback: Option<Box<dyn Fn(String) -> bool + Send + 'static>>,
+    // pub token_callback: Option<fn(String) -> bool>,
     pub path_prompt_cache: String,
     pub m_lock: bool,
     pub m_map: bool,
@@ -189,12 +188,15 @@ impl PredictOptions {
         self.m_map = m_map;
     }
 
-    // pub fn set_token_callback(&mut self, token_callback: Option<Box<dyn Fn(String) -> bool>>) {
-    //     self.token_callback = token_callback;
-    // }
-    pub fn set_token_callback(&mut self, token_callback: Option<fn(String) -> bool>) {
+    pub fn set_token_callback(
+        &mut self,
+        token_callback: Option<Box<dyn Fn(String) -> bool + Send + 'static>>,
+    ) {
         self.token_callback = token_callback;
     }
+    // pub fn set_token_callback(&mut self, token_callback: Option<fn(String) -> bool>) {
+    //     self.token_callback = token_callback;
+    // }
 
     pub fn set_path_prompt_cache(&mut self, path_prompt_cache: String) {
         self.path_prompt_cache = path_prompt_cache;
