@@ -24,7 +24,7 @@ cargo build
 
 ```toml
 [dependencies]
-llama_cpp_rs = "0.1.1"
+llama_cpp_rs = "0.1.2"
 ```
 
 ```rs
@@ -43,18 +43,18 @@ fn main() {
     .unwrap();
 
     let mut predict_options = PredictOptions {
-        token_callback: Some(|token| {
+        token_callback: Some(Box::new(|token| {
             println!("token1: {}", token);
 
             true
-        }),
+        })),
         ..Default::default()
     };
 
     llama
         .predict(
             "what are the national animals of india".into(),
-            &mut predict_options,
+             predict_options,
         )
         .unwrap();
 }
