@@ -3,7 +3,7 @@ use std::{
     error::Error,
     ffi::{c_char, c_void, CStr, CString},
     mem::size_of,
-    sync::{Mutex},
+    sync::Mutex,
 };
 
 use options::{ModelOptions, PredictOptions};
@@ -15,7 +15,8 @@ pub mod options;
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 lazy_static! {
-    static ref CALLBACKS: Mutex<HashMap<usize, fn(String) -> bool>> = Mutex::new(HashMap::new());
+    static ref CALLBACKS: Mutex<HashMap<usize, Box<dyn Fn(String) -> bool + Send + 'static>>> =
+        Mutex::new(HashMap::new());
 }
 
 #[derive(Debug, Clone)]
@@ -381,25 +382,25 @@ impl LLama {
         }
     }
 
-    pub fn set_token_callback(&self, callback: Option<fn(String) -> bool>) {
+    pub fn set_token_callback(
+        &self,
+        callback: Option<Box<dyn Fn(String) -> bool + Send + 'static>>,
+    ) {
         set_callback(self.state, callback);
     }
 
-    pub fn predict(
-        &self,
-        text: String,
-        opts: &mut PredictOptions,
-    ) -> Result<String, Box<dyn Error>> {
+    pub fn predict(&self, text: String, opts: PredictOptions) -> Result<String, Box<dyn Error>> {
         let c_str = CString::new(text.clone()).unwrap();
 
         let input = c_str.as_ptr();
-
-        if let Some(callback) = opts.token_callback {
-            set_callback(self.state, Some(callback));
-        }
+        let mut opts = opts;
 
         if opts.tokens == 0 {
             opts.tokens = 99999999;
+        }
+        
+        if let Some(callback) = opts.token_callback {
+            set_callback(self.state, Some(callback));
         }
 
         let reverse_count = opts.stop_prompts.len();
@@ -419,6 +420,8 @@ impl LLama {
         if !reverse_prompt.is_empty() {
             pass = reverse_prompt.as_mut_ptr();
         }
+
+        println!("count {}", reverse_count);
 
         let mut out = Vec::with_capacity(opts.tokens as usize);
 
@@ -503,7 +506,10 @@ impl Drop for LLama {
     }
 }
 
-fn set_callback(state: *mut c_void, callback: Option<fn(String) -> bool>) {
+fn set_callback(
+    state: *mut c_void,
+    callback: Option<Box<dyn Fn(String) -> bool + Send + 'static>>,
+) {
     let mut callbacks = CALLBACKS.lock().unwrap();
 
     if let Some(callback) = callback {
