@@ -22,3 +22,6 @@ bindgen = "0.66.1"
 [lib]
 name = "llama_cpp_rs"
 path = "src/lib.rs"
+
+[features]
+opencl = []
