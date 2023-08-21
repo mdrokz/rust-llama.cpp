@@ -42,7 +42,7 @@ fn main() {
     )
     .unwrap();
 
-    let mut predict_options = PredictOptions {
+    let predict_options = PredictOptions {
         token_callback: Some(Box::new(|token| {
             println!("token1: {}", token);
 
