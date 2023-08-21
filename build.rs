@@ -41,8 +41,10 @@ fn main() {
 
         if cfg!(target_os = "linux") {
             println!("cargo:rustc-link-lib=OpenCL");
+            println!("cargo:rustc-link-lib=clblast");
         } else if cfg!(target_os = "macos") {
-            ccbuild = ccbuild.flag("-framework OpenCL");
+            println!("cargo:rustc-link-lib=framework=OpenCL");
+            println!("cargo:rustc-link-lib=clblast");
         }
 
         ccbuild = ccbuild.file("./llama.cpp/ggml-opencl.cpp");
