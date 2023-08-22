@@ -17,13 +17,13 @@ RUN apt-get update && apt-get install -y \
 # install clblast
 RUN add-apt-repository ppa:cnugteren/clblast && \
     apt-get update && \
-    apt-get install -y clblast
-
+    apt-get install -y libclblast-dev
 
 WORKDIR /app
 
 COPY . .
 
-RUN cargo build --release
+RUN cd examples/opencl && \
+    cargo build --release
 
-CMD ["./target/release/llama_opencl"]
+CMD ["./examples/opencl/target/release/llama_opencl"]
