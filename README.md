@@ -69,12 +69,12 @@ see [examples](https://github.com/mdrokz/rust-llama.cpp/examples/README.md)
 
 ## TODO
 
-- [x] Implement support for cublas,openBLAS & OpenCL
+- [x] Implement support for cublas,openBLAS & OpenCL [#7](https://github.com/mdrokz/rust-llama.cpp/pull/7)
 - [ ] Implement support for GPU (Metal)
 - [ ] Add some test cases
 - [ ] Support for fetching models through http & S3
 - [ ] Sync with latest master & support GGUF
-- [x] Add some proper examples
+- [x] Add some proper examples https://github.com/mdrokz/rust-llama.cpp/pull/7
 
 ## LICENSE
 
