@@ -61,12 +61,18 @@ fn main() {
 
 ```
 
+## Examples 
+
+The examples contain dockerfiles to run them
+
+see [examples](https://github.com/mdrokz/rust-llama.cpp/examples/README.md)
+
 ## TODO
 
-- [ ] Implement support for cublas,openBLAS & OpenCL
+- [x] Implement support for cublas,openBLAS & OpenCL
 - [ ] Implement support for GPU (Metal)
 - [ ] Add some test cases
-- [ ] Add some proper examples
+- [x] Add some proper examples
 
 ## LICENSE
 
