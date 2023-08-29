@@ -15,7 +15,7 @@ keywords = [
     "llama-cpp",
     "inference",
 ]
-exclude = ["examples", "example_test"]
+exclude = ["/examples", "/example_test"]
 license-file = "LICENSE"
 readme = "README.md"
 repository = "https://github.com/mdrokz/rust-llama.cpp"
