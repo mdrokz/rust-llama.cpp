@@ -42,7 +42,7 @@ fn main() {
     )
     .unwrap();
 
-    let mut predict_options = PredictOptions {
+    let predict_options = PredictOptions {
         token_callback: Some(Box::new(|token| {
             println!("token1: {}", token);
 
@@ -61,12 +61,20 @@ fn main() {
 
 ```
 
+## Examples 
+
+The examples contain dockerfiles to run them
+
+see [examples](https://github.com/mdrokz/rust-llama.cpp/examples/README.md)
+
 ## TODO
 
-- [ ] Implement support for cublas,openBLAS & OpenCL
+- [x] Implement support for cublas,openBLAS & OpenCL
 - [ ] Implement support for GPU (Metal)
 - [ ] Add some test cases
-- [ ] Add some proper examples
+- [ ] Support for fetching models through http & S3
+- [ ] Sync with latest master & support GGUF
+- [x] Add some proper examples
 
 ## LICENSE
 
