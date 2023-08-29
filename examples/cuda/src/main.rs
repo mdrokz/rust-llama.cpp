@@ -9,7 +9,7 @@ fn main() {
         ..Default::default()
     };
 
-    let llama = LLama::new("./<your model.bin>".into(), &model_options).unwrap();
+    let llama = LLama::new("/models/<your model>.bin".into(), &model_options).unwrap();
 
     let predict_options = PredictOptions {
         tokens: 0,

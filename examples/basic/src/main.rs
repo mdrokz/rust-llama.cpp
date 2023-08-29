@@ -7,7 +7,7 @@ fn main() {
     let model_options = ModelOptions::default();
 
     let llama = LLama::new(
-        "./<your model.bin>".into(),
+        "./<your model>.bin".into(),
         &model_options,
     )
     .unwrap();
