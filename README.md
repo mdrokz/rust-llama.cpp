@@ -65,7 +65,7 @@ fn main() {
 
 The examples contain dockerfiles to run them
 
-see [examples](https://github.com/mdrokz/rust-llama.cpp/examples/README.md)
+see [examples](https://github.com/mdrokz/rust-llama.cpp/blob/master/examples/README.md)
 
 ## TODO
 
