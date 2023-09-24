@@ -38,5 +38,6 @@ path = "src/lib.rs"
 [features]
 opencl = []
 cuda = []
+metal = []
 openblas = []
 blis = []
