@@ -22,6 +22,10 @@ cargo run --release
 
 A example to use nvidia GPU's with the cuda feature:
 
+You can also set these env variables for cuda
+
+`LLAMA_CUDA_DMMV_X=32 LLAMA_CUDA_DMMV_Y=1 LLAMA_CUDA_KQUANTS_ITER=2`
+
 firstly build the image from the root of the repository
 
 ```
