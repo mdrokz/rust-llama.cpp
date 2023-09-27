@@ -108,6 +108,19 @@ fn compile_ggml(cx: &mut Build, cx_flags: &str) {
         .compile("ggml");
 }
 
+fn compile_metal(cx: &mut Build, cxx: &mut Build) {
+    cx.flag("-DGGML_USE_METAL").flag("-DGGML_METAL_NDEBUG");
+    cxx.flag("-DGGML_USE_METAL");
+
+    println!("cargo:rustc-link-lib=framework=Metal");
+    println!("cargo:rustc-link-lib=framework=Foundation");
+    println!("cargo:rustc-link-lib=framework=MetalPerformanceShaders");
+    println!("cargo:rustc-link-lib=framework=MetalKit");
+
+    cx.include("./llama.cpp/ggml-metal.h")
+        .file("./llama.cpp/ggml-metal.m");
+}
+
 fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type: &str) {
     for cxx_flag in cxx_flags.split_whitespace() {
         cxx.flag(cxx_flag);
@@ -161,6 +174,9 @@ fn main() {
         compile_openblas(&mut cx);
     } else if cfg!(feature = "blis") {
         compile_blis(&mut cx);
+    } else if cfg!(feature = "metal") && cfg!(target_os = "macos") {
+        compile_metal(&mut cx, &mut cxx);
+        ggml_type = "metal".to_string();
     }
 
     if cfg!(feature = "cuda") {
