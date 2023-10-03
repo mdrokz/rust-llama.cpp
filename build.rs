@@ -154,7 +154,7 @@ fn main() {
 
     // check if os is linux
     // if so, add -fPIC to cxx_flags
-    if cfg!(target_os = "linux" || target_os = "macos") {
+    if cfg!(target_os = "linux") || cfg!(target_os = "macos") {
         cx_flags.push_str(" -Wall -Wextra -Wpedantic -Wcast-qual -Wdouble-promotion -Wshadow -Wstrict-prototypes -Wpointer-arith -pthread -march=native -mtune=native");
         cxx_flags.push_str(" -Wall -Wdeprecated-declarations -Wunused-but-set-variable -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-multichar -fPIC -pthread -march=native -mtune=native");
     } else if cfg!(target_os = "windows") {
