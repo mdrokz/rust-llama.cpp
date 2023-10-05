@@ -18,7 +18,7 @@ pub struct ModelOptions {
 impl Default for ModelOptions {
     fn default() -> Self {
         Self {
-            context_size: 2048,
+            context_size: 512,
             seed: 0,
             f16_memory: true,
             m_lock: false,

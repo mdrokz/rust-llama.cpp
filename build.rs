@@ -104,7 +104,11 @@ fn compile_ggml(cx: &mut Build, cx_flags: &str) {
 
     cx.include("./llama.cpp")
         .file("./llama.cpp/ggml.c")
+        .file("./llama.cpp/ggml-alloc.c")
+	.file("./llama.cpp/k_quants.c")
         .cpp(false)
+	.define("_GNU_SOURCE", None)
+	.define("GGML_USE_K_QUANTS", None)
         .compile("ggml");
 }
 
@@ -137,7 +141,7 @@ fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type
     }
 
     cxx.shared_flag(true)
-        .file("./llama.cpp/examples/common.cpp")
+        .file("./llama.cpp/common/common.cpp")
         .file("./llama.cpp/llama.cpp")
         .file("./binding.cpp")
         .cpp(true)
@@ -168,7 +172,7 @@ fn main() {
 
     let mut ggml_type = String::new();
 
-    cxx.include("./llama.cpp/examples").include("./llama.cpp");
+    cxx.include("./llama.cpp/common").include("./llama.cpp").include("./include_shims");
 
     if cfg!(feature = "opencl") {
         compile_opencl(&mut cx, &mut cxx);
