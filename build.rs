@@ -153,8 +153,8 @@ fn main() {
 
     compile_bindings(&out_path);
 
-    let mut cx_flags = String::from("");
-    let mut cxx_flags = String::from("");
+    let mut cx_flags = String::from("-std=c11");
+    let mut cxx_flags = String::from("-std=c++11");
 
     // check if os is linux
     // if so, add -fPIC to cxx_flags
