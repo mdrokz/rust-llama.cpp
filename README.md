@@ -73,7 +73,7 @@ see [examples](https://github.com/mdrokz/rust-llama.cpp/blob/master/examples/REA
 - [x] Implement support for GPU (Metal)
 - [ ] Add some test cases
 - [ ] Support for fetching models through http & S3
-- [ ] Sync with latest master & support GGUF
+- [x] Sync with latest master & support GGUF
 - [x] Add some proper examples https://github.com/mdrokz/rust-llama.cpp/pull/7
 
 ## LICENSE
