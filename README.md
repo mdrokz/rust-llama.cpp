@@ -24,7 +24,7 @@ cargo build
 
 ```toml
 [dependencies]
-llama_cpp_rs = "0.2.0"
+llama_cpp_rs = "0.3.0"
 ```
 
 ```rs
