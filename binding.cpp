@@ -142,6 +142,8 @@ int llama_predict(void *params_ptr, void *state_pr, char *result, bool debug)
 {
     gpt_params *params_p = (gpt_params *)params_ptr;
     llama_context *ctx = (llama_context *)state_pr;
+    
+    llama_set_n_threads(ctx, params_p->n_threads, params_p->n_threads_batch);
 
     const int n_ctx = llama_n_ctx(ctx);
 
@@ -631,6 +633,7 @@ void *llama_allocate_params(const char *prompt, int seed, int threads, int token
     gpt_params *params = new gpt_params;
     params->seed = seed;
     params->n_threads = threads;
+    params->n_threads_batch = threads;
     params->n_predict = tokens;
     params->repeat_last_n = repeat_last_n;
     params->prompt_cache_ro = prompt_cache_ro;
