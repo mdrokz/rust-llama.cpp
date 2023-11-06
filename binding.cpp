@@ -142,8 +142,6 @@ int llama_predict(void *params_ptr, void *state_pr, char *result, bool debug)
 {
     gpt_params *params_p = (gpt_params *)params_ptr;
     llama_context *ctx = (llama_context *)state_pr;
-    
-    gpt_params params = *params_p;
 
     const int n_ctx = llama_n_ctx(ctx);
 
