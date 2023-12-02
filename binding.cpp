@@ -139,7 +139,7 @@ int eval(void *params_ptr, void *state_pr, char *text)
     return llama_eval(ctx, tokens.data(), n_prompt_tokens, n_past);
 }
 
-int llama_predict(void *params_ptr, void *state_pr, char *result, bool debug)
+int llama_predict(void *params_ptr, void *state_pr, char **result, bool debug)
 {
     gpt_params *params_p = (gpt_params *)params_ptr;
     llama_context *ctx = (llama_context *)state_pr;
@@ -547,7 +547,7 @@ end:
         llama_reset_timings(ctx);
     }
 
-    strcpy(result, res.c_str());
+    *result = strdup(res.c_str());
     return 0;
 }
 
