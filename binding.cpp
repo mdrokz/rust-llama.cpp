@@ -1,5 +1,6 @@
 #include "common.h"
 #include "llama.h"
+#include "common/common.h"
 
 #include "binding.h"
 
@@ -123,10 +124,10 @@ int eval(void *params_ptr, void *state_pr, char *text)
     llama_context *ctx = (llama_context *)state_pr;
 
     auto n_past = 0;
-    auto last_n_tokens_data = std::vector<llama_token>(params_p->repeat_last_n, 0);
+    auto last_n_tokens_data = std::vector<llama_token>(params_p->sparams.penalty_repeat, 0);
 
     auto tokens = std::vector<llama_token>(params_p->n_ctx);
-    auto n_prompt_tokens = llama_tokenize(llama_get_model(ctx), text, strlen(text), tokens.data(), tokens.size(), true);
+    auto n_prompt_tokens = llama_tokenize(llama_get_model(ctx), text, strlen(text), tokens.data(), tokens.size(), true, false);
 
     if (n_prompt_tokens < 1)
     {
@@ -277,7 +278,7 @@ int llama_predict(void *params_ptr, void *state_pr, char *result, bool debug)
     // do one empty run to warm up the model
     {
         llama_token tmp[1] = {
-            llama_token_bos(ctx),
+            llama_token_bos(llama_get_model(ctx)),
         };
         llama_eval(ctx, tmp, 1, 0);
         llama_reset_timings(ctx);
@@ -370,19 +371,19 @@ int llama_predict(void *params_ptr, void *state_pr, char *result, bool debug)
         if ((int)embd_inp.size() <= n_consumed)
         {
             // out of user input, sample next token
-            const float temp = params_p->temp;
-            const int32_t top_k = params_p->top_k <= 0 ? llama_n_vocab(llama_get_model(ctx)) : params_p->top_k;
-            const float top_p = params_p->top_p;
-            const float tfs_z = params_p->tfs_z;
-            const float typical_p = params_p->typical_p;
-            const int32_t repeat_last_n = params_p->repeat_last_n < 0 ? n_ctx : params_p->repeat_last_n;
-            const float repeat_penalty = params_p->repeat_penalty;
-            const float alpha_presence = params_p->presence_penalty;
-            const float alpha_frequency = params_p->frequency_penalty;
-            const int mirostat = params_p->mirostat;
-            const float mirostat_tau = params_p->mirostat_tau;
-            const float mirostat_eta = params_p->mirostat_eta;
-            const bool penalize_nl = params_p->penalize_nl;
+            const float temp = params_p->sparams.temp;
+            const int32_t top_k = params_p->sparams.top_k <= 0 ? llama_n_vocab(llama_get_model(ctx)) : params_p->sparams.top_k;
+            const float top_p = params_p->sparams.top_p;
+            const float tfs_z = params_p->sparams.tfs_z;
+            const float typical_p = params_p->sparams.typical_p;
+            const int32_t repeat_last_n = params_p->sparams.penalty_last_n < 0 ? n_ctx : params_p->sparams.penalty_last_n;
+            const float repeat_penalty = params_p->sparams.penalty_repeat;
+            const float alpha_presence = params_p->sparams.penalty_present;
+            const float alpha_frequency = params_p->sparams.penalty_freq;
+            const int mirostat = params_p->sparams.mirostat;
+            const float mirostat_tau = params_p->sparams.mirostat_tau;
+            const float mirostat_eta = params_p->sparams.mirostat_eta;
+            const bool penalize_nl = params_p->sparams.penalize_nl;
 
             // optionally save the session on first sample (for faster prompt loading next time)
             if (!path_session.empty() && need_to_save_session && !params_p->prompt_cache_ro)
@@ -398,7 +399,7 @@ int llama_predict(void *params_ptr, void *state_pr, char *result, bool debug)
                 auto n_vocab = llama_n_vocab(llama_get_model(ctx));
 
                 // Apply params_p->logit_bias map
-                for (auto it = params_p->logit_bias.begin(); it != params_p->logit_bias.end(); it++)
+                for (auto it = params_p->sparams.logit_bias.begin(); it != params_p->sparams.logit_bias.end(); it++)
                 {
                     logits[it->first] += it->second;
                 }
@@ -413,17 +414,14 @@ int llama_predict(void *params_ptr, void *state_pr, char *result, bool debug)
                 llama_token_data_array candidates_p = {candidates.data(), candidates.size(), false};
 
                 // Apply penalties
-                float nl_logit = logits[llama_token_nl(ctx)];
+                float nl_logit = logits[llama_token_nl(llama_get_model(ctx))];
                 auto last_n_repeat = std::min(std::min((int)last_n_tokens.size(), repeat_last_n), n_ctx);
-                llama_sample_repetition_penalty(ctx, &candidates_p,
+                llama_sample_repetition_penalties(ctx, &candidates_p,
                                                 last_n_tokens.data() + last_n_tokens.size() - last_n_repeat,
-                                                last_n_repeat, repeat_penalty);
-                llama_sample_frequency_and_presence_penalties(ctx, &candidates_p,
-                                                              last_n_tokens.data() + last_n_tokens.size() - last_n_repeat,
-                                                              last_n_repeat, alpha_frequency, alpha_presence);
+                                                last_n_repeat, repeat_penalty, alpha_frequency, alpha_presence);
                 if (!penalize_nl)
                 {
-                    logits[llama_token_nl(ctx)] = nl_logit;
+                    logits[llama_token_nl(llama_get_model(ctx))] = nl_logit;
                 }
 
                 if (temp <= 0)
@@ -523,7 +521,7 @@ int llama_predict(void *params_ptr, void *state_pr, char *result, bool debug)
         }
 
         // end of text token
-        if (!embd.empty() && embd.back() == llama_token_eos(ctx))
+        if (!embd.empty() && embd.back() == llama_token_eos(llama_get_model(ctx)))
         {
             break;
         }
@@ -635,15 +633,15 @@ void *llama_allocate_params(const char *prompt, int seed, int threads, int token
     params->n_threads = threads;
     params->n_threads_batch = threads;
     params->n_predict = tokens;
-    params->repeat_last_n = repeat_last_n;
+    params->sparams.penalty_last_n = repeat_last_n;
     params->prompt_cache_ro = prompt_cache_ro;
-    params->top_k = top_k;
-    params->top_p = top_p;
+    params->sparams.top_k = top_k;
+    params->sparams.top_p = top_p;
     params->memory_f16 = memory_f16;
-    params->temp = temp;
+    params->sparams.temp = temp;
     params->use_mmap = mmap;
     params->use_mlock = mlock;
-    params->repeat_penalty = repeat_penalty;
+    params->sparams.penalty_repeat = repeat_penalty;
     params->n_batch = n_batch;
     params->n_keep = n_keep;
     if (maingpu[0] != '\0')
@@ -685,22 +683,22 @@ void *llama_allocate_params(const char *prompt, int seed, int threads, int token
     {
         params->antiprompt = create_vector(antiprompt, antiprompt_count);
     }
-    params->tfs_z = tfs_z;
-    params->typical_p = typical_p;
-    params->presence_penalty = presence_penalty;
-    params->mirostat = mirostat;
-    params->mirostat_eta = mirostat_eta;
-    params->mirostat_tau = mirostat_tau;
-    params->penalize_nl = penalize_nl;
+    params->sparams.tfs_z = tfs_z;
+    params->sparams.typical_p = typical_p;
+    params->sparams.penalty_present = presence_penalty;
+    params->sparams.mirostat = mirostat;
+    params->sparams.mirostat_eta = mirostat_eta;
+    params->sparams.mirostat_tau = mirostat_tau;
+    params->sparams.penalize_nl = penalize_nl;
     std::stringstream ss(logit_bias);
     llama_token key;
     char sign;
     std::string value_str;
     if (ss >> key && ss >> sign && std::getline(ss, value_str) && (sign == '+' || sign == '-'))
     {
-        params->logit_bias[key] = std::stof(value_str) * ((sign == '-') ? -1.0f : 1.0f);
+        params->sparams.logit_bias[key] = std::stof(value_str) * ((sign == '-') ? -1.0f : 1.0f);
     }
-    params->frequency_penalty = frequency_penalty;
+    params->sparams.penalty_freq = frequency_penalty;
     params->prompt = prompt;
 
     return params;
