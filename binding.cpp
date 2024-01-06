@@ -637,7 +637,7 @@ void *llama_allocate_params(const char *prompt, int seed, int threads, int token
     params->prompt_cache_ro = prompt_cache_ro;
     params->sparams.top_k = top_k;
     params->sparams.top_p = top_p;
-    params->memory_f16 = memory_f16;
+//    params->memory_f16 = memory_f16;
     params->sparams.temp = temp;
     params->use_mmap = mmap;
     params->use_mlock = mlock;
@@ -712,7 +712,7 @@ void *load_model(const char *fname, int n_ctx, int n_seed, bool memory_f16, bool
 
     lparams.n_ctx = n_ctx;
     lparams.seed = n_seed;
-    lparams.f16_kv = memory_f16;
+//    lparams.f16_kv = memory_f16;
     lparams.embedding = embeddings;
     mparams.use_mlock = mlock;
     mparams.n_gpu_layers = n_gpu_layers;
