@@ -1,4 +1,5 @@
 use std::env;
+use std::path::Path;
 use std::path::PathBuf;
 
 use cc::Build;
@@ -106,14 +107,14 @@ fn compile_ggml(cx: &mut Build, cx_flags: &str) {
         .file("./llama.cpp/ggml.c")
         .file("./llama.cpp/ggml-alloc.c")
         .file("./llama.cpp/ggml-backend.c")
-	    .file("./llama.cpp/ggml-quants.c")
+        .file("./llama.cpp/ggml-quants.c")
         .cpp(false)
-	.define("_GNU_SOURCE", None)
-	.define("GGML_USE_K_QUANTS", None)
+        .define("_GNU_SOURCE", None)
+        .define("GGML_USE_K_QUANTS", None)
         .compile("ggml");
 }
 
-fn compile_metal(cx: &mut Build, cxx: &mut Build) {
+fn compile_metal(cx: &mut Build, cxx: &mut Build, out_dir: &Path) {
     cx.flag("-DGGML_USE_METAL").flag("-DGGML_METAL_NDEBUG");
     cxx.flag("-DGGML_USE_METAL");
 
@@ -122,8 +123,43 @@ fn compile_metal(cx: &mut Build, cxx: &mut Build) {
     println!("cargo:rustc-link-lib=framework=MetalPerformanceShaders");
     println!("cargo:rustc-link-lib=framework=MetalKit");
 
-    cx.include("./llama.cpp/ggml-metal.h")
-        .file("./llama.cpp/ggml-metal.m");
+    const GGML_METAL_METAL_PATH: &str = "./llama.cpp/ggml-metal.metal";
+    const GGML_METAL_PATH: &str = "./llama.cpp/ggml-metal.m";
+
+    // HACK: patch ggml-metal.m so that it includes ggml-metal.metal, so that
+    // a runtime dependency is not necessary
+    // from: https://github.com/rustformers/llm/blob/9376078c12ea1990bd42e63432656819a056d379/crates/ggml/sys/build.rs#L198
+    // License: MIT
+    let ggml_metal_path = {
+        let ggml_metal_metal = std::fs::read_to_string(GGML_METAL_METAL_PATH)
+            .expect("Could not read ggml-metal.metal")
+            .replace('\\', "\\\\")
+            .replace('\n', "\\n")
+            .replace('\r', "\\r")
+            .replace('\"', "\\\"");
+
+        let ggml_metal =
+            std::fs::read_to_string(GGML_METAL_PATH).expect("Could not read ggml-metal.m");
+
+        let needle = r#"NSString * src = [NSString stringWithContentsOfFile:sourcePath encoding:NSUTF8StringEncoding error:&error];"#;
+        if !ggml_metal.contains(needle) {
+            panic!("ggml-metal.m does not contain the needle to be replaced; the patching logic needs to be reinvestigated. Contact a `rust-llama` developer!");
+        }
+
+        // Replace the runtime read of the file with a compile-time string
+        let ggml_metal = ggml_metal.replace(
+            needle,
+            &format!(r#"NSString * src  = @"{ggml_metal_metal}";"#),
+        );
+
+        let patched_ggml_metal_path = out_dir.join("ggml-metal.m");
+        std::fs::write(&patched_ggml_metal_path, ggml_metal)
+            .expect("Could not write temporary patched ggml-metal.m");
+
+        patched_ggml_metal_path
+    };
+
+    cx.include("./llama.cpp/ggml-metal.h").file(ggml_metal_path);
 }
 
 fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type: &str) {
@@ -183,7 +219,7 @@ fn main() {
     } else if cfg!(feature = "blis") {
         compile_blis(&mut cx);
     } else if cfg!(feature = "metal") && cfg!(target_os = "macos") {
-        compile_metal(&mut cx, &mut cxx);
+        compile_metal(&mut cx, &mut cxx, &out_path);
         ggml_type = "metal".to_string();
     }
 
