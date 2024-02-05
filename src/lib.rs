@@ -423,7 +423,7 @@ impl LLama {
 
         println!("count {}", reverse_count);
 
-        let mut out = Vec::with_capacity(opts.tokens as usize);
+        let mut out: *mut c_char = std::ptr::null_mut();
 
         let logit_bias_cstr = CString::new(opts.logit_bias.clone()).unwrap();
 
@@ -476,7 +476,7 @@ impl LLama {
                 opts.prompt_cache_ro,
             );
 
-            let ret = llama_predict(params, self.state, out.as_mut_ptr(), opts.debug_mode);
+            let ret = llama_predict(params, self.state, &mut out as _, opts.debug_mode);
 
             if ret != 0 {
                 return Err("Failed to predict".into());
@@ -484,7 +484,7 @@ impl LLama {
 
             llama_free_params(params);
 
-            let c_str: &CStr = CStr::from_ptr(out.as_mut_ptr());
+            let c_str: &CStr = CStr::from_ptr(out);
             let mut res: String = c_str.to_str().unwrap().to_owned();
 
             res = res.trim_start().to_string();

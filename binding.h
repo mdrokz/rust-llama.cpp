@@ -31,7 +31,7 @@ extern "C"
 
     void llama_binding_free_model(void *state);
 
-    int llama_predict(void *params_ptr, void *state_pr, char *result, bool debug);
+    int llama_predict(void *params_ptr, void *state_pr, char **result, bool debug);
 
 #ifdef __cplusplus
 }
