@@ -24,6 +24,7 @@
 #include <windows.h>
 #include <signal.h>
 #endif
+#include "ggml-cuda.h"
 
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__)) || defined(_WIN32)
 void sigint_handler(int signo)
@@ -35,20 +36,23 @@ void sigint_handler(int signo)
 }
 #endif
 
-static std::string llama_token_to_str(const struct llama_context * ctx, llama_token token) {
+static std::string llama_token_to_str(const struct llama_context *ctx, llama_token token)
+{
     std::vector<char> result(8, 0);
     const int n_tokens = llama_token_to_piece(llama_get_model(ctx), token, result.data(), result.size());
-    if (n_tokens < 0) {
+    if (n_tokens < 0)
+    {
         result.resize(-n_tokens);
         int check = llama_token_to_piece(llama_get_model(ctx), token, result.data(), result.size());
         GGML_ASSERT(check == -n_tokens);
-    } else {
+    }
+    else
+    {
         result.resize(n_tokens);
     }
 
     return std::string(result.data(), result.size());
 }
-
 
 int get_embeddings(void *params_ptr, void *state_pr, float *res_embeddings)
 {
@@ -143,7 +147,7 @@ int llama_predict(void *params_ptr, void *state_pr, char **result, bool debug)
 {
     gpt_params *params_p = (gpt_params *)params_ptr;
     llama_context *ctx = (llama_context *)state_pr;
-    
+
     llama_set_n_threads(ctx, params_p->n_threads, params_p->n_threads_batch);
 
     const int n_ctx = llama_n_ctx(ctx);
@@ -417,8 +421,8 @@ int llama_predict(void *params_ptr, void *state_pr, char **result, bool debug)
                 float nl_logit = logits[llama_token_nl(llama_get_model(ctx))];
                 auto last_n_repeat = std::min(std::min((int)last_n_tokens.size(), repeat_last_n), n_ctx);
                 llama_sample_repetition_penalties(ctx, &candidates_p,
-                                                last_n_tokens.data() + last_n_tokens.size() - last_n_repeat,
-                                                last_n_repeat, repeat_penalty, alpha_frequency, alpha_presence);
+                                                  last_n_tokens.data() + last_n_tokens.size() - last_n_repeat,
+                                                  last_n_repeat, repeat_penalty, alpha_frequency, alpha_presence);
                 if (!penalize_nl)
                 {
                     logits[llama_token_nl(llama_get_model(ctx))] = nl_logit;
@@ -470,7 +474,7 @@ int llama_predict(void *params_ptr, void *state_pr, char **result, bool debug)
             // call the token callback, no need to check if one is actually registered, that will
             // be handled on the Go side.
             auto token_str = llama_token_to_str(ctx, id);
-            if (!tokenCallback(state_pr, (char*)token_str.c_str()))
+            if (!tokenCallback(state_pr, (char *)token_str.c_str()))
             {
                 break;
             }
@@ -637,7 +641,7 @@ void *llama_allocate_params(const char *prompt, int seed, int threads, int token
     params->prompt_cache_ro = prompt_cache_ro;
     params->sparams.top_k = top_k;
     params->sparams.top_p = top_p;
-//    params->memory_f16 = memory_f16;
+    //    params->memory_f16 = memory_f16;
     params->sparams.temp = temp;
     params->use_mmap = mmap;
     params->use_mlock = mlock;
@@ -656,9 +660,9 @@ void *llama_allocate_params(const char *prompt, int seed, int threads, int token
         const std::regex regex{R"([,/]+)"};
         std::sregex_token_iterator it{arg_next.begin(), arg_next.end(), regex, -1};
         std::vector<std::string> split_arg{it, {}};
-        GGML_ASSERT(split_arg.size() <= LLAMA_MAX_DEVICES);
+        GGML_ASSERT(split_arg.size() <= GGML_CUDA_MAX_DEVICES);
 
-        for (size_t i = 0; i < LLAMA_MAX_DEVICES; ++i)
+        for (size_t i = 0; i < GGML_CUDA_MAX_DEVICES; ++i)
         {
             if (i < split_arg.size())
             {
@@ -677,7 +681,7 @@ void *llama_allocate_params(const char *prompt, int seed, int threads, int token
     /* if (ignore_eos) // TODO: Cannot be set before context is allocated (llama_token_eos requires context access)
     {
         params->logit_bias[llama_token_eos()] = -INFINITY;
-	}
+    }
     */
     if (antiprompt_count > 0)
     {
@@ -712,7 +716,7 @@ void *load_model(const char *fname, int n_ctx, int n_seed, bool memory_f16, bool
 
     lparams.n_ctx = n_ctx;
     lparams.seed = n_seed;
-//    lparams.f16_kv = memory_f16;
+    //    lparams.f16_kv = memory_f16;
     lparams.embedding = embeddings;
     mparams.use_mlock = mlock;
     mparams.n_gpu_layers = n_gpu_layers;
@@ -732,11 +736,11 @@ void *load_model(const char *fname, int n_ctx, int n_seed, bool memory_f16, bool
         const std::regex regex{R"([,/]+)"};
         std::sregex_token_iterator it{arg_next.begin(), arg_next.end(), regex, -1};
         std::vector<std::string> split_arg{it, {}};
-        GGML_ASSERT(split_arg.size() <= LLAMA_MAX_DEVICES);
+        GGML_ASSERT(split_arg.size() <= GGML_CUDA_MAX_DEVICES);
 
-	float *tsplit = (float*)malloc(sizeof(float) * LLAMA_MAX_DEVICES);
+        float *tsplit = (float *)malloc(sizeof(float) * GGML_CUDA_MAX_DEVICES);
 
-        for (size_t i = 0; i < LLAMA_MAX_DEVICES; ++i)
+        for (size_t i = 0; i < GGML_CUDA_MAX_DEVICES; ++i)
         {
             if (i < split_arg.size())
             {
@@ -747,7 +751,7 @@ void *load_model(const char *fname, int n_ctx, int n_seed, bool memory_f16, bool
                 tsplit[i] = 0.0f;
             }
         }
-	mparams.tensor_split = tsplit;
+        mparams.tensor_split = tsplit;
     }
 
     if (n_batch > 0)
@@ -758,7 +762,7 @@ void *load_model(const char *fname, int n_ctx, int n_seed, bool memory_f16, bool
     try
     {
         auto model = llama_load_model_from_file(fname, mparams);
-	res = llama_new_context_with_model(model, lparams);
+        res = llama_new_context_with_model(model, lparams);
     }
     catch (std::runtime_error &e)
     {

@@ -15,7 +15,8 @@ extern "C"
 
     void save_state(void *ctx, char *dst, char *modes);
 
-    void *load_model(const char *fname, int n_ctx, int n_seed, bool memory_f16, bool mlock, bool embeddings, bool mmap, bool low_vram, bool vocab_only, int n_gpu, int n_batch, const char *maingpu, const char *tensorsplit, bool numa);
+    void *load_model(
+        const char *fname, int n_ctx, int n_seed, bool memory_f16, bool mlock, bool embeddings, bool mmap, bool low_vram, bool vocab_only, int n_gpu, int n_batch, const char *maingpu, const char *tensorsplit, bool numa);
 
     int get_embeddings(void *params_ptr, void *state_pr, float *res_embeddings);
 
