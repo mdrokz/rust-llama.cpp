@@ -96,6 +96,7 @@ fn compile_cuda(cxx_flags: &str) {
         .flag("-Wno-pedantic")
         .include("./llama.cpp/ggml-cuda.h")
         .compile("ggml-cuda");
+    println!("cargo:rustc-link-lib=static=ggml-cuda");
 }
 
 fn compile_ggml(cx: &mut Build, cx_flags: &str) {
@@ -112,6 +113,7 @@ fn compile_ggml(cx: &mut Build, cx_flags: &str) {
         .define("_GNU_SOURCE", None)
         .define("GGML_USE_K_QUANTS", None)
         .compile("ggml");
+    println!("cargo:rustc-link-lib=static=ggml");
 }
 
 fn compile_metal(cx: &mut Build, cxx: &mut Build, out_dir: &Path) {
@@ -167,9 +169,9 @@ fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type
         cxx.flag(cxx_flag);
     }
 
-    let ggml_obj = PathBuf::from(&out_path).join("llama.cpp/ggml.o");
+    // let ggml_obj = PathBuf::from(&out_path).join("llama.cpp/ggml.o");
 
-    cxx.object(ggml_obj);
+    // cxx.object(ggml_obj);
 
     if !ggml_type.is_empty() {
         let ggml_feature_obj =
@@ -209,7 +211,9 @@ fn main() {
 
     let mut ggml_type = String::new();
 
-    cxx.include("./llama.cpp/common").include("./llama.cpp").include("./include_shims");
+    cxx.include("./llama.cpp/common")
+        .include("./llama.cpp")
+        .include("./include_shims");
 
     if cfg!(feature = "opencl") {
         compile_opencl(&mut cx, &mut cxx);
@@ -241,7 +245,7 @@ fn main() {
 
         compile_cuda(&cxx_flags);
 
-        compile_llama(&mut cxx, &cxx_flags, &out_path, "cuda");
+        compile_llama(&mut cxx, &cxx_flags, &out_path, "");
     } else {
         compile_ggml(&mut cx, &cx_flags);
 

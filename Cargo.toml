@@ -28,8 +28,8 @@ edition = "2021"
 lazy_static = "1.4.0"
 
 [build-dependencies]
-cc = "1.0.79"
-bindgen = "0.66.1"
+cc = "1"
+bindgen = "0.69"
 
 [lib]
 name = "llama_cpp_rs"
