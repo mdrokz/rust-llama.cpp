@@ -160,7 +160,7 @@ fn compile_metal(cx: &mut Build, cxx: &mut Build, out_dir: &Path) {
         patched_ggml_metal_path
     };
 
-    cx.include("./llama.cpp/ggml-metal.h").file(ggml_metal_path);
+    cx.include("./llama.cpp").file(ggml_metal_path);
 }
 
 fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type: &str) {
