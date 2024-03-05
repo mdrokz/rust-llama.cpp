@@ -1,4 +1,5 @@
 use std::env;
+use std::ffi::OsStr;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -159,7 +160,7 @@ fn compile_metal(cx: &mut Build, cxx: &mut Build, out_dir: &Path) {
         patched_ggml_metal_path
     };
 
-    cx.include("./llama.cpp/ggml-metal.h").file(ggml_metal_path);
+    cx.include("./llama.cpp").file(ggml_metal_path);
 }
 
 fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type: &str) {
@@ -172,9 +173,17 @@ fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type
     cxx.object(ggml_obj);
 
     if !ggml_type.is_empty() {
-        let ggml_feature_obj =
-            PathBuf::from(&out_path).join(format!("llama.cpp/ggml-{}.o", ggml_type));
-        cxx.object(ggml_feature_obj);
+        let out_path_pf = PathBuf::from(&out_path);
+        let contains_ggml_type = |s: &&OsStr| {
+            let s = s.to_string_lossy();
+            s.contains(ggml_type) && s.ends_with(".o")
+        };
+        let obj_files = out_path_pf.iter().filter(contains_ggml_type);
+        let out_path_pf = out_path_pf.join("llama.cpp");
+        let obj_files = obj_files.chain(out_path_pf.iter().filter(contains_ggml_type));
+        for obj in obj_files {
+            cxx.object(obj);
+        }
     }
 
     cxx.shared_flag(true)
@@ -209,7 +218,9 @@ fn main() {
 
     let mut ggml_type = String::new();
 
-    cxx.include("./llama.cpp/common").include("./llama.cpp").include("./include_shims");
+    cxx.include("./llama.cpp/common")
+        .include("./llama.cpp")
+        .include("./include_shims");
 
     if cfg!(feature = "opencl") {
         compile_opencl(&mut cx, &mut cxx);
