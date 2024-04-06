@@ -96,10 +96,13 @@ fn compile_cuda(cxx_flags: &str) {
             nvcc.flag(&format!("{}={}", env_flag.1, flag_split.next().unwrap()));
         }
     }
+    let compiler = nvcc.get_compiler();
+    if !compiler.is_like_msvc() {
+        nvcc.flag("-Wno-pedantic");
+    }
 
     nvcc.compiler("nvcc")
         .file("./llama.cpp/ggml-cuda.cu")
-        .flag("-Wno-pedantic")
         .include("./llama.cpp/ggml-cuda.h")
         .compile("ggml-cuda");
 }
