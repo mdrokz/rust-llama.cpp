@@ -101,7 +101,7 @@ fn compile_cuda(cxx_flags: &str) {
         nvcc.flag("-Wno-pedantic");
     }
 
-    nvcc.compiler("nvcc")
+    nvcc.cuda(true)
         .file("./llama.cpp/ggml-cuda.cu")
         .include("./llama.cpp/ggml-cuda.h")
         .compile("ggml-cuda");
