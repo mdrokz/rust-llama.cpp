@@ -64,6 +64,11 @@ fn compile_cuda(cxx_flags: &str) {
         println!("cargo:rustc-link-lib={}", lib);
     }
 
+    let cxx_flags = cxx_flags.split_whitespace();
+    // Remove windows specific flags
+    #[cfg(target_os = "windows")]
+    let cxx_flags = cxx_flags.filter(|flag| !flag.starts_with('/'));
+
     let mut nvcc = cc::Build::new();
 
     let env_flags = vec![
@@ -78,7 +83,7 @@ fn compile_cuda(cxx_flags: &str) {
         nvcc.flag(nvcc_flag);
     }
 
-    for cxx_flag in cxx_flags.split_whitespace() {
+    for cxx_flag in cxx_flags {
         nvcc.flag(cxx_flag);
     }
 
