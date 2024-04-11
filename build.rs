@@ -119,8 +119,10 @@ fn compile_ggml(cx: &mut Build, cx_flags: &str) {
         .file("./llama.cpp/ggml-quants.c")
         .cpp(false)
         .define("_GNU_SOURCE", None)
-        .define("GGML_USE_K_QUANTS", None)
-        .compile("ggml");
+        .define("GGML_USE_K_QUANTS", None);
+    #[cfg(feature = "cuda")]
+    cx.define("GGML_USE_CUBLAS", None);
+    cx.compile("ggml");
 }
 
 fn compile_metal(cx: &mut Build, cxx: &mut Build, out_dir: &Path) {
