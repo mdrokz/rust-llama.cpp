@@ -48,24 +48,54 @@ fn compile_blis(cx: &mut Build) {
     println!("cargo:rustc-link-lib=blis");
 }
 
+#[cfg(target_os = "windows")]
+fn find_cuda() -> PathBuf {
+    let program_files = match env::var("PROGRAMFILES") {
+        Ok(program_files) => PathBuf::from(program_files),
+        Err(VarError::NotPresent) => PathBuf::from("C:\\Program Files"),
+        Err(VarError::NotUnicode(_)) => panic!("PROGRAMFILES environment variable is not valid unicode"),
+    };
+    if !program_files.exists() {
+        panic!("Program Files not found");
+    }
+
+    let cuda_path = program_files.join("NVIDIA GPU Computing Toolkit\\CUDA");
+    if !cuda_path.exists() {
+        panic!("CUDA not found");
+    }
+    let cuda_dirs = cuda_path.read_dir().expect("Could not read CUDA directory")
+        .filter_map(|p| p.ok())
+        .filter(|p| p.path().is_dir())
+        .collect::<Vec<_>>();
+    match cuda_dirs.len() {
+        0 => panic!("CUDA not found"),
+        1 => cuda_dirs.first().unwrap().path(),
+        // Take the most recent one
+        _ => cuda_dirs.into_iter().fold(PathBuf::new(), |acc, p| if acc < p.path() { acc } else { p.path() })
+    }
+}
+
 fn compile_cuda(cxx_flags: &str) {
     println!("cargo:rustc-link-search=native=/usr/local/cuda/lib64");
     println!("cargo:rustc-link-search=native=/opt/cuda/lib64");
 
+    #[cfg(target_os = "linux")]
     if let Ok(cuda_path) = std::env::var("CUDA_PATH") {
-        #[cfg(target_os = "linux")]
         println!(
             "cargo:rustc-link-search=native={}/targets/x86_64-linux/lib",
             cuda_path
         );
+    }
 
-        #[cfg(target_os = "windows")]
+    #[cfg(target_os = "windows")]
+    if let Ok(cuda_path) = std::env::var("CUDA_PATH").or_else(|_| find_cuda().to_str().map(String::from).ok_or(VarError::NotPresent)) {
         println!(
             "cargo:rustc-link-search=native={}/lib/x64",
             cuda_path
         );
     }
-    //culibos, pthread dl rt are only needed for linux
+    
+    // culibos, pthread dl rt are only needed for linux
     #[cfg(target_os = "linux")]
     let libs = "cuda cublas culibos cudart cublasLt pthread dl rt";
     #[cfg(target_os = "windows")]
@@ -201,22 +231,6 @@ fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type
         .file("./binding.cpp")
         .cpp(true)
         .compile("binding");
-}
-#[cfg(target_os = "windows")]
-fn find_cuda(program_files: &Path) -> PathBuf {
-    let cuda_path = program_files.join("NVIDIA GPU Computing Toolkit\\CUDA");
-    if !cuda_path.exists() {
-        panic!("CUDA not found");
-    }
-    let cuda_dirs = cuda_path.read_dir().expect("Could not read CUDA directory")
-        .filter_map(|p| p.ok())
-        .filter(|p| p.path().is_dir())
-        .collect::<Vec<_>>();
-    match cuda_dirs.len() {
-        0 => panic!("CUDA not found"),
-        1 => cuda_dirs.first().unwrap().path(),
-        _ => cuda_dirs.into_iter().fold(PathBuf::new(), |acc, p| if acc < p.path() { acc } else { p.path() })
-    }
 }
 
 fn main() {
