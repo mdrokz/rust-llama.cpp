@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use cc::Build;
 
-fn compile_bindings(out_path: &PathBuf) {
+fn compile_bindings(out_path: &Path) {
     let bindings = bindgen::Builder::default()
         .header("./binding.h")
         .blocklist_function("tokenCallback")
@@ -14,7 +14,7 @@ fn compile_bindings(out_path: &PathBuf) {
         .expect("Unable to generate bindings");
 
     bindings
-        .write_to_file(&out_path.join("bindings.rs"))
+        .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
 }
 
@@ -148,7 +148,7 @@ fn compile_cuda(cxx_flags: &str) {
     }
 
     for env_flag in env_flags {
-        let mut flag_split = env_flag.0.split("=");
+        let mut flag_split = env_flag.0.split('=');
         if let Ok(val) = std::env::var(flag_split.next().unwrap()) {
             nvcc.flag(&format!("{}={}", env_flag.1, val));
         } else {
@@ -232,7 +232,7 @@ fn compile_metal(cx: &mut Build, cxx: &mut Build, out_dir: &Path) {
     cx.include("./llama.cpp/ggml-metal.h").file(ggml_metal_path);
 }
 
-fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type: &str) {
+fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &Path, ggml_type: &str) {
     for cxx_flag in cxx_flags.split_whitespace() {
         cxx.flag(cxx_flag);
     }
@@ -245,7 +245,7 @@ fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type
     }
 
     if let Some(build_info) = generate_build_info(out_path) {
-        cxx.file(build_info.to_str().unwrap());
+        cxx.file(build_info.to_str().expect("Failed to convert path to string"));
     }
 
     cxx.shared_flag(true)
