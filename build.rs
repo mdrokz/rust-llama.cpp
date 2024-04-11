@@ -209,18 +209,6 @@ fn find_cuda(program_files: &Path) -> PathBuf {
         _ => cuda_dirs.into_iter().fold(PathBuf::new(), |acc, p| if acc < p.path() { acc } else { p.path() })
     }
 }
-#[cfg(target_os = "windows")]
-fn get_program_files() -> Option<PathBuf> {
-    let path = match env::var("PROGRAMFILES") {
-        Ok(program_files) => PathBuf::from(program_files),
-        Err(VarError::NotPresent) => PathBuf::from("C:\\Program Files"),
-        Err(VarError::NotUnicode(_)) => return None,
-    };
-    if !path.exists() {
-        return None;
-    }
-    Some(path)
-}
 
 fn main() {
     let out_path = PathBuf::from(env::var("OUT_DIR").expect("No out dir found"));
@@ -261,32 +249,6 @@ fn main() {
     }
 
     if cfg!(feature = "cuda") {
-        cx_flags.push_str(" -DGGML_USE_CUBLAS");
-        cxx_flags.push_str(" -DGGML_USE_CUBLAS");
-
-        if cfg!(target_os = "windows") {
-            let cuda_path = match std::env::var("CUDA_PATH") {
-                Ok(cuda_path) => cuda_path,
-                Err(VarError::NotPresent) => {
-                    let Some(program_files) = get_program_files() else {panic!("Can't find Program Files")};
-                    find_cuda(&program_files).to_str().expect("Unable to get CUDA path").to_string()
-                }
-                Err(_) => panic!("CUDA not found")
-            };
-            cx.include(format!("{}/include", cuda_path));
-            cxx.include(format!("{}/include", cuda_path));
-        } else {
-            cx.include("/usr/local/cuda/include")
-                .include("/opt/cuda/include");
-            cxx.include("/usr/local/cuda/include")
-                .include("/opt/cuda/include");
-
-            if let Ok(cuda_path) = std::env::var("CUDA_PATH") {
-                cx.include(format!("{}/targets/x86_64-linux/include", cuda_path));
-                cxx.include(format!("{}/targets/x86_64-linux/include", cuda_path));
-            }
-        }
-
         compile_ggml(&mut cx, &cx_flags);
 
         compile_cuda(&cxx_flags);
