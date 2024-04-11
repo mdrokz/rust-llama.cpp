@@ -18,6 +18,25 @@ fn compile_bindings(out_path: &PathBuf) {
         .expect("Couldn't write bindings!");
 }
 
+fn generate_build_info(out_path: &Path) -> Option<PathBuf> {
+    let path = Path::new("llama.cpp/common/build-info.cpp.in");
+    if !path.exists() {
+        return None;
+    }
+
+    let contents = std::fs::read_to_string(path).ok()?;
+
+    let contents = contents
+        .replace("@BUILD_NUMBER@", "1")
+        .replace("@BUILD_COMMIT@", "-")
+        .replace("@BUILD_COMPILER@", "rust")
+        .replace("@BUILD_TARGET@", std::env::consts::ARCH);
+
+    let out = out_path.join("build-info.cpp");
+    std::fs::write(&out, contents).ok()?;
+    Some(out)
+}
+
 fn compile_opencl(cx: &mut Build, cxx: &mut Build) {
     cx.flag("-DGGML_USE_CLBLAST");
     cxx.flag("-DGGML_USE_CLBLAST");
@@ -223,6 +242,10 @@ fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type
 
     if !ggml_type.is_empty() {
         println!("cargo:rustc-link-lib=ggml-{}", ggml_type);
+    }
+
+    if let Some(build_info) = generate_build_info(out_path) {
+        cxx.file(build_info.to_str().unwrap());
     }
 
     cxx.shared_flag(true)
