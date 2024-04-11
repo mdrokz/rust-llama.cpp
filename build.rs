@@ -53,20 +53,30 @@ fn compile_cuda(cxx_flags: &str) {
     println!("cargo:rustc-link-search=native=/opt/cuda/lib64");
 
     if let Ok(cuda_path) = std::env::var("CUDA_PATH") {
+        #[cfg(target_os = "linux")]
         println!(
             "cargo:rustc-link-search=native={}/targets/x86_64-linux/lib",
             cuda_path
         );
-    }
 
-    let libs = "cublas culibos cudart cublasLt pthread dl rt";
+        #[cfg(target_os = "windows")]
+        println!(
+            "cargo:rustc-link-search=native={}/lib/x64",
+            cuda_path
+        );
+    }
+    //culibos, pthread dl rt are only needed for linux
+    #[cfg(target_os = "linux")]
+    let libs = "cuda cublas culibos cudart cublasLt pthread dl rt";
+    #[cfg(target_os = "windows")]
+    let libs = "cuda cublas cudart cublasLt";
 
     for lib in libs.split_whitespace() {
         println!("cargo:rustc-link-lib={}", lib);
     }
 
     let cxx_flags = cxx_flags.split_whitespace();
-    // Remove windows specific flags
+    // Remove msvc specific flags
     #[cfg(target_os = "windows")]
     let cxx_flags = cxx_flags.filter(|flag| !flag.starts_with('/'));
 
