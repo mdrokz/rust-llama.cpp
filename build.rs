@@ -176,14 +176,11 @@ fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type
         cxx.flag(cxx_flag);
     }
 
-    let ggml_obj = PathBuf::from(&out_path).join("llama.cpp/ggml.o");
-
-    cxx.object(ggml_obj);
+    println!("cargo:rustc-link-search={}", out_path.display());
+    println!("cargo:rustc-link-lib=ggml");
 
     if !ggml_type.is_empty() {
-        let ggml_feature_obj =
-            PathBuf::from(&out_path).join(format!("llama.cpp/ggml-{}.o", ggml_type));
-        cxx.object(ggml_feature_obj);
+        println!("cargo:rustc-link-lib=ggml-{}", ggml_type);
     }
 
     cxx.shared_flag(true)
