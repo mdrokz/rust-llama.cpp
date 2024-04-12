@@ -179,8 +179,7 @@ fn compile_ggml(cx: &mut Build, cx_flags: &str) {
         .cpp(false)
         .define("_GNU_SOURCE", None)
         .define("GGML_USE_K_QUANTS", None);
-    #[cfg(feature = "cuda")]
-    cx.define("GGML_USE_CUBLAS", None);
+
     cx.compile("ggml");
 }
 
@@ -295,6 +294,9 @@ fn main() {
     }
 
     if cfg!(feature = "cuda") {
+        cx.define("GGML_USE_CUBLAS", None);
+        cxx.define("GGML_USE_CUBLAS", None);
+        
         compile_ggml(&mut cx, &cx_flags);
 
         compile_cuda(&cxx_flags);
