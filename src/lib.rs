@@ -421,8 +421,6 @@ impl LLama {
             pass = reverse_prompt.as_mut_ptr();
         }
 
-        println!("count {}", reverse_count);
-
         let mut out: *mut c_char = std::ptr::null_mut();
 
         let logit_bias_cstr = CString::new(opts.logit_bias.clone()).unwrap();
