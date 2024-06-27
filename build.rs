@@ -120,6 +120,7 @@ fn compile_cuda(cxx_flags: &str) {
     #[cfg(target_os = "windows")]
     let libs = "cuda cublas cudart cublasLt";
 
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     for lib in libs.split_whitespace() {
         println!("cargo:rustc-link-lib={}", lib);
     }
